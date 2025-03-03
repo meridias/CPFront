@@ -1,0 +1,12 @@
+[
+  {
+    "accountName": "meridias561",
+    "accountPassword": "blahblahblahMoo",
+    "defaultAccount": true
+  },
+  {
+    "accountName": "doh",
+    "accountPassword": "blahblahblahMoo",
+    "defaultAccount": false
+  }
+]

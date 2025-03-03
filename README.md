@@ -1,0 +1,2 @@
+# CPFront
+ CPFront - OnnaMUD frontend

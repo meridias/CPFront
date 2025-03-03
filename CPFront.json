@@ -1,0 +1,6 @@
+{
+  "serverIPDomain": "localhost",
+  "serverPort": 11000,
+  "fontSize": 20,
+  "autoConnectWithAccount": false
+}

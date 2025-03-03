@@ -1,0 +1,16 @@
+[
+  {
+    "serverGuid": "2dfd0335-d65f-4233-920b-ab0c93f49c5d",
+    "name": "test",
+    "serverIPDomain": "localhost",
+    "port": 11000,
+    "defaultServer": true,
+    "accounts": [
+      {
+        "accountName": "meridias561",
+        "accountPassword": "blahblahblahMoo",
+        "defaultAccount": true
+      }
+    ]
+  }
+]

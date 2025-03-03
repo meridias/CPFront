@@ -1,0 +1,34 @@
+{
+    "name": "CPFrontControls",
+    "maps": [
+        {
+            "name": "UI",
+            "id": "1570f9a5-3afb-4c48-ae61-9ec07303bc3c",
+            "actions": [
+                {
+                    "name": "FocusCommandLine",
+                    "type": "Button",
+                    "id": "de6a2387-a20d-4f7e-b8da-0d5c57c67dfc",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "cddf34e8-2399-4ee8-927f-7dd97d7a6bbe",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "FocusCommandLine",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
