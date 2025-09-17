@@ -16,8 +16,10 @@ namespace Panels
         public List<PanelResize> resizeZones = new List<PanelResize>();
         public List<PanelResize> draggedZones = new List<PanelResize>();
 
+        //[HideInInspector]
+       // public TextWindowController text;
         [HideInInspector]
-        public TextWindowController text;
+        public BaseOutput output;
 
         public bool isDockable = true;
 
@@ -40,9 +42,9 @@ namespace Panels
         {
             set
             {
-                if (text != null)
+                if (output != null)
                 {
-                    text.text = value;
+                    output.Input = value;
                 }
 
             }
@@ -117,7 +119,8 @@ namespace Panels
                     if (newSizeDelta.y < MinSize.y)
                     {
                         newY = MinSize.y;
-                    } else
+                    }
+                    else
                     {
                         newY = newSizeDelta.y;
                     }
@@ -128,13 +131,42 @@ namespace Panels
                     if (newSizeDelta.x < MinSize.x)
                     {
                         newX = MinSize.x;
-                    } else
+                    }
+                    else
                     {
                         newX = newSizeDelta.x;
                     }
                 }
                 RectTransform.sizeDelta = new Vector2(newX, newY);
                 Group.UpdateContentRect();
+            }
+            else//no group/undockable floater
+            {
+                if (newSizeDelta.y != newY)
+                {
+                    //only worry about y
+                    if (newSizeDelta.y < MinSize.y)
+                    {
+                        newY = MinSize.y;
+                    }
+                    else
+                    {
+                        newY = newSizeDelta.y;
+                    }
+                }
+                if (newSizeDelta.x != newX)
+                {
+                    //only worry about x
+                    if (newSizeDelta.x < MinSize.x)
+                    {
+                        newX = MinSize.x;
+                    }
+                    else
+                    {
+                        newX = newSizeDelta.x;
+                    }
+                }
+                RectTransform.sizeDelta = new Vector2(newX, newY);
             }
             return RectTransform.sizeDelta;
         }
@@ -218,10 +250,11 @@ namespace Panels
             RectTransform.anchoredPosition = anchorPos;
             RectTransform.sizeDelta = size;
 
-            if (text != null)
-            {
-                text.textSelectObject.SetText();
-            }
+            //not sure if I still need this or not??????????
+//            if (output != null)
+//            {
+//                output.SetText();
+//            }
 
             if (Group != null && Group.layout != Layout.Unrestricted)
             {

@@ -346,6 +346,7 @@ namespace onnaMUD
 
         public bool SendData(TcpClient client, string msgCode, string dataToSend)//TcpClient client, string sender, string msgCode, string dataToSend)
         {
+            //Debug.Log(dataToSend);
             //we're always going to send what we have for a guid, it'll be up to the server to verify it or not
             NetworkStream clientStream = null;
             //if (isConnected)
@@ -756,10 +757,11 @@ namespace onnaMUD
                 {
                     mainController.ShowOutput("main", "<br>Connecting...");//yes we want this to show up before every connection attempt
                     CancellationTokenSource tokenSource = new CancellationTokenSource(5000);//cancel token after 5 seconds
+                    //Debug.Log($"Trying to connect...{server},{port}");
                     Task clientConnect = client.ConnectAsync(server, port);
-                    //Debug.Log($"Trying to connect...{i}");
+                    //Debug.Log($"Trying to connect...{server},{port}");
                     //                   await client.ConnectAsync(server, port);//  ipAddress, port);//, cancelToken);
-                    using (tokenSource.Token.Register(() => taskSource.TrySetResult(true)))
+                    using (tokenSource.Token.Register(() => taskSource.TrySetResult(true)))//when token is timed out, tries to set taskSource to true
                     {
                         if (clientConnect != await Task.WhenAny(clientConnect, taskSource.Task))
                         {// whenany returns the task that completed first, so if taskSource gets timed out by the tokenSource, then
@@ -774,6 +776,7 @@ namespace onnaMUD
                     //if we connected
                     isConnecting = false;
                     isConnected = true;
+                    //Debug.Log("moo?");
                     ReceiveFromServer();
                     //Debug.Log("harhar");
                     return;
@@ -806,9 +809,9 @@ namespace onnaMUD
                     //Debug.Log(string.Format("SocketException : {0}", se.ToString()));
                     //return false;
                 }*/
-                catch (Exception)// e)
+                catch (Exception e)
                 {
-                    Debug.Log("Unexpected exception");
+                    Debug.Log($"Unexpected exception: {e}");
                     mainController.ShowOutput("main", "<br>Unable to connect.");
                     DisconnectFromServer();
                     //Debug.Log(string.Format("Unexpected exception : {0}", e.ToString()));
@@ -974,9 +977,10 @@ namespace onnaMUD
                     //readyToReceive = false;
                     return;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    Debug.Log("blah");
+                    //Debug.Log(ex);
+                    DisconnectFromServer();
                     return;
                 }
 
@@ -998,9 +1002,13 @@ namespace onnaMUD
                             return;
                         }
 
-                        if (eofIndex > 0 && receivedDataBuffer.Length >= eofIndex + 4)
+                        if (eofIndex > 0 && receivedDataBuffer.Length >= eofIndex + 5)
                         {//if we go the index correctly and we've got the whole message
                          //first, make sure we're only dealing with JUST the first message, if multiple messages got crammed together
+                            if (eofIndex + 5 > receivedDataBuffer.Length)
+                            {
+                                Debug.Log(receivedDataBuffer);
+                            }
                             string firstMessage = receivedDataBuffer.Substring(0, eofIndex + 5);
                             //strip the message length from the front of the message
                             firstMessage = firstMessage.Substring(7);
@@ -1008,7 +1016,7 @@ namespace onnaMUD
                             firstMessage = firstMessage.Remove(firstMessage.IndexOf("<EOF>"));
                             //clear the buffer of the first message
                             receivedDataBuffer = receivedDataBuffer.Remove(0, eofIndex + 5);
-
+                            //eofIndex = 0;
                             //before sending the message on to the ProcessMessage block, check if we're receiving a disconnect message from server
                             //      string[] delimiter = { "::" };
                             //    string[] splitMessage = firstMessage.Split(delimiter, StringSplitOptions.None);

@@ -110,6 +110,7 @@ namespace onnaMUD
         private CPFrontControls inputControls;
 
         public Guid characterGuid;
+        public List<EditWindows> editWindows = new List<EditWindows>();
 
         //command bar stuff
         public TMP_InputField commandLine;
@@ -206,7 +207,7 @@ namespace onnaMUD
 
             yield return new WaitUntil(IsCanvasReady);
             //Test();
-            Moo();
+            InitializePanelLayout();
         }
 
         private bool IsCanvasReady()
@@ -356,7 +357,7 @@ namespace onnaMUD
             //Debug.Log()
         }*/
 
-        public void Moo()
+        public void InitializePanelLayout()
         {
             PanelGroup mainGroup = PanelUtils.AddPanelGroup(panelsCanvas, Direction.Main, Layout.Unrestricted);
             //testing with 2 on each side
@@ -392,7 +393,7 @@ namespace onnaMUD
             Panel roomPanel = panelsCanvas.NewPanel();
             roomPanel.SetTitleTag("Room");
             roomPanel.AddPanelToGroup(mainGroup);
-            roomPanel.SetContentInPanel("text");
+            roomPanel.SetContentInPanel("textreplace");
             outputPanels[1] = roomPanel;
 
             //mainOutput = (TextWindowController)mainPanel.output;
@@ -409,19 +410,17 @@ namespace onnaMUD
             test2Panel.SetContentInPanel("text");
             Panel test4Panel = panelsCanvas.NewPanel();
             test4Panel.AddPanelToGroup();
-            //test4Panel.AddFloaterPanel();
-            
             test4Panel.SetContentInPanel("text");
             Panel test5Panel = panelsCanvas.NewPanel();
             test5Panel.AddPanelToGroup(leftGroup1);
             test5Panel.SetContentInPanel ("text");
             test5Panel.SetTitle("Blahblah");
-            Panel test6Panel = panelsCanvas.NewPanel();
+
+            /*Panel test6Panel = panelsCanvas.NewPanel();
             test6Panel.SetContentInPanel("text");
             test6Panel.AddPanelToGroup();
-            //test6Panel.AddFloaterPanel();
             test6Panel.SetTitle("Blahbibity");
-            test6Panel.isDockable = false;
+            test6Panel.isDockable = false;*/
             //         Panels.Panel mainOutputPanel = UnityEngine.Object.Instantiate(Resources.Load<Panels.Panel>("WindowGroup"), canvas.RectTransform, false);
             //         TextWindowController mainOutput = UnityEngine.Object.Instantiate(Resources.Load<TextWindowController>("WindowGroup"), canvas.RectTransform, false);
             //         leftGroup1.NewPanelInGroup()
@@ -429,7 +428,7 @@ namespace onnaMUD
 
             roomPanel.SetSizeDelta(new Vector2(mainGroup.RectTransform.sizeDelta.x, 400f));
             roomPanel.SetPanelPos(new Vector2(0f, 0f));
-            roomPanel.text.replaceText = true;
+            //roomPanel.output.replaceText = true;//this is done with SetContent textreplace now
             mainPanel.SetSizeDelta(new Vector2(mainGroup.RectTransform.sizeDelta.x, 400f));
             mainPanel.SetPanelPos(new Vector2(0f, 400f));
             //mainPanel.RectTransform.sizeDelta = new Vector2(mainGroup.RectTransform.sizeDelta.x, 150f);
@@ -441,7 +440,7 @@ namespace onnaMUD
         {
             //KeepScrollAtBottom("main", $"<mark=#959595aa>{roomName}<pos=99.9%><size=0px>.</size></mark>");
             //testing.text = $"<mark=#959595aa>{roomName}<pos=99.9%><size=0px>.</size></mark>";
-            mainOutput.text = $"<mark=#959595aa>{roomName}<pos=99.9%><size=0px>.</size></mark>";
+/*            mainOutput.text = $"<mark=#959595aa>{roomName}<pos=99.9%><size=0px>.</size></mark>";*/
             //textOutput.text += $"<mark=#959595aa>{roomName}<pos=99.9%><size=0px>.</size></mark><br>";
 
             //tempOutput.text += $"<mark=#ffff00aa>{roomName}<pos=99.9%><size=0px>.</size></mark><br>";
@@ -486,7 +485,27 @@ namespace onnaMUD
                 case "room":
                     if (outputPanels[1] != null)
                     {
+                        if (outputToShow.StartsWith("["))
+                        {
+                            //right now, we're assuming that the only text coming from the server that starts with [ is the room name
+                            string roomName = outputToShow.Substring(0, outputToShow.IndexOf("]") + 1);
+                            //Debug.Log(roomName);
+                         //   string newName = roomName.Replace("<br>[", "<mark=#959595aa><br>[");
+                         //   newName = newName.Replace("]", "]<pos=99.9%><size=0px>.</size></mark>");
+                            //outputToShow = outputToShow.Replace("<br>[", $"<mark=#959595aa><br>[");
 
+                            //outputToShow = outputToShow.Replace(roomName, newName);
+                            outputPanels[1].SetTitle(roomName);
+                        }
+                        outputToShow = outputToShow.Replace("<link", $"{openLink}<link");
+                        outputToShow = outputToShow.Replace("</link>", $"{closeLink}</link>");
+                        outputToShow = outputToShow.Substring(outputToShow.IndexOf("]") + 5);//so we ignore the following <br> too
+
+                        if (Application.isPlaying)
+                        {
+                            //  testing.text = outputToShow;
+                            outputPanels[1].input = outputToShow;
+                        }
 
 
                     }
@@ -987,6 +1006,9 @@ namespace onnaMUD
             //Debug.Log(code);
             switch (code)
             {
+                case "000":
+                    //just a check from the server to see if this client is still connected or not, ignore it
+                    break;
                 case "052":
                     //stuff we're getting from server: current player guid, logged in account name, selected character, game name for title bar, etc
                     switch (message.ToLower())//"guid", "account"name, or "character"name
@@ -1031,7 +1053,8 @@ namespace onnaMUD
                                 rtCounter += lengthOfRT;
                                 isInRT = true;
 
-                            } else
+                            }
+                            else
                             {
                                 if (rtCounter <= 0)
                                 {
@@ -1127,12 +1150,101 @@ namespace onnaMUD
                     break;
                 case "110":
                     //standard window output
-                    ShowOutput("main",message);
+                    ShowOutput("main", message);
                     break;
                 case "111":
                     //whole line highlight for room name
                     ShowOutput("room", message);
                     //ShowRoomName(message);
+                    break;
+                case "120"://edit window layout
+                    //let's get the type of thing we're editing and its ID to check if we have a window open for it already
+                    int layoutTypeIndex = message.IndexOf(":");
+                    if (layoutTypeIndex > -1)
+                    {
+                        Panel editPanel = null;
+                        //we found the first :, which hopefully is what type of thing we're editing
+                        string editType = message.Substring(0, layoutTypeIndex);
+                        //ShowOutput("main", "<br>" + editType);
+                        int thingIndex = message.IndexOf(",", layoutTypeIndex);
+                        string editThing = message.Substring(layoutTypeIndex + 1, thingIndex - layoutTypeIndex - 1);
+                        //ShowOutput("main", "<br>" + editThing);
+                        Guid.TryParse(editThing, out Guid thingGuid);
+                        bool foundMatch = false;
+
+                        for (int i = 0; i < editWindows.Count; i++)
+                        {
+                            if (editWindows[i].editType == editType && editWindows[i].editID == thingGuid)
+                            {
+                                //found a match to type and guid in an open edit window
+                                editPanel = editWindows[i].editPanel;
+                                foundMatch = true;
+                                break;
+                            }
+                        }
+                        if (!foundMatch)
+                        {
+                            //open a new edit window
+                            EditWindows tempWindow = new EditWindows();
+                            editPanel = panelsCanvas.NewPanel();
+                            editPanel.SetContentInPanel("edit");
+                            editPanel.AddPanelToGroup();
+                            editPanel.SetTitle($"Edit {editType}");
+                            editPanel.isDockable = false;
+                            editPanel.SetSizeDelta(new Vector2(350f, 400f));
+                            tempWindow.editPanel = editPanel;
+                            tempWindow.editType = editType;
+                            tempWindow.editID = thingGuid;
+                            editWindows.Add(tempWindow);
+                        }
+
+                        //now that we have a panel, send the layout to it
+                        if (editPanel != null)
+                        {
+                            //now we need to get the EditWindowController so we can send the layout to it
+                            //and save the panel.input for the actual json data
+                            EditWindowController editOutput = editPanel.output.GetComponent<EditWindowController>();
+                            if (editOutput != null)
+                            {
+                                editOutput.GetLayoutString(message);
+                                //editPanel.output.Input = message;
+                            }
+                        }
+
+                    }
+
+                    break;
+                case "121"://edit window json string
+                    //Debug.Log(message);
+                    int jsonTypeIndex = message.IndexOf(":");
+                    if (jsonTypeIndex > -1)
+                    {
+                        Panel editPanel = null;
+                        //we found the first :, which hopefully is what type of thing we're editing
+                        string editType = message.Substring(0, jsonTypeIndex);
+                        //ShowOutput("main", "<br>" + editType);
+                        int thingIndex = message.IndexOf(",", jsonTypeIndex);
+                        string editThing = message.Substring(jsonTypeIndex + 1, thingIndex - jsonTypeIndex - 1);
+                        //ShowOutput("main", "<br>" + editThing);
+                        Guid.TryParse(editThing, out Guid thingGuid);
+                        bool foundMatch = false;
+
+                        for (int i = 0; i < editWindows.Count; i++)
+                        {
+                            if (editWindows[i].editType == editType && editWindows[i].editID == thingGuid)
+                            {
+                                //found a match to type and guid in an open edit window
+                                editPanel = editWindows[i].editPanel;
+                                foundMatch = true;
+                                break;
+                            }
+                        }
+                        if (foundMatch)
+                        {
+                            //we found the edit window panel for this json
+                            editPanel.input = message.Substring(thingIndex + 1);
+                        }
+                    }
                     break;
 
                 case "10000":
@@ -1173,6 +1285,13 @@ namespace onnaMUD
             public bool defaultAccount = false;
 
 
+        }
+
+        public class EditWindows
+        {
+            public string editType = "";//"room", "character", etc
+            public Guid editID = Guid.Empty;//Guid of whatever we're editing
+            public Panel editPanel;
         }
 
     }

@@ -12,7 +12,7 @@ public class TextWindowController : BaseOutput// MonoBehaviour
 {
     public TextSelectHighlight textSelectObject;
     public ScrollRect scrollView;
-    public Panel panel;
+    //public Panel panel;
 
     //public TMP_Text textObject;
 
@@ -28,7 +28,45 @@ public class TextWindowController : BaseOutput// MonoBehaviour
 //    [HideInInspector]
 //    public ClickableLinks clickable;
 
-    public string text
+    public override string Input
+    {
+        set
+        {
+            if (gameObject == null)
+                return;
+
+            if (replaceText)
+            {
+                textSelectObject.textObject.text = value;
+            }
+            else
+            {
+                textSelectObject.textObject.text += value;
+            }
+
+            //only do all this if not replacing text?
+
+            if (!replaceText)
+            {
+                if (textSelectObject.textObject.preferredHeight < scrollView.viewport.rect.height && scrollView.content.pivot.y != 0f)
+                {
+                    scrollView.content.pivot = new Vector2(scrollView.content.pivot.x, 0f);
+                }
+                else if (textSelectObject.textObject.preferredHeight >= scrollView.viewport.rect.height && scrollView.content.pivot.y != 1f)
+                {
+                    scrollView.content.pivot = new Vector2(scrollView.content.pivot.x, 1f);
+                }
+
+                if (IsScrollAtBottom() && scrollView.content.pivot.y == 1f)
+                {
+                    SetScrollToBottom();
+                }
+            }
+            textSelectObject.SetText();
+        }
+    }
+
+ /*   public string text
     {
         get
         {
@@ -40,13 +78,10 @@ public class TextWindowController : BaseOutput// MonoBehaviour
                 return;
 
          //   bool isScrollAtBottom = false;
-
          //   if (textSelectObject.textObject.preferredHeight < scrollView.viewport.rect.height || outputVScrollbar.value <= .02f || outputVScrollbar.value > 1f)
          //   {
-                //Debug.Log(textSelectObject.textObject.preferredHeight);
          //       isScrollAtBottom = true;
          //   }
-            //Debug.Log($"before: size={outputVScrollbar.size}, value={outputVScrollbar.value}, {isScrollAtBottom}");
 
             if (replaceText)
             {
@@ -55,7 +90,6 @@ public class TextWindowController : BaseOutput// MonoBehaviour
             {
                 textSelectObject.textObject.text += value;
             }
-            //Debug.Log($"pref: {textSelectObject.textObject.preferredHeight}, view: {scrollView.viewport.rect.height}");
 
             if (textSelectObject.textObject.preferredHeight < scrollView.viewport.rect.height && scrollView.content.pivot.y != 0f)
             {
@@ -67,49 +101,47 @@ public class TextWindowController : BaseOutput// MonoBehaviour
 
             if (IsScrollAtBottom() && scrollView.content.pivot.y == 1f)
             {
-                //Debug.Log("blah");
                 SetScrollToBottom();
                 //waitForScrollBarCO = StartCoroutine(WaitForScrollBarUpdate());
                 //scrollView.normalizedPosition = new Vector2(0f, 0f);
-
-                //Debug.Log(scrollView.content.anchoredPosition);
                 //scrollView.content.anchoredPosition = new Vector2(scrollView.content.anchoredPosition.x, textSelectObject.textObject.preferredHeight - scrollView.viewport.rect.height);// gameObject.GetComponent<RectTransform>().rect.height);
                 //outputVScrollbar.value = 0f;
                 //scrollView.verticalNormalizedPosition = 0f;
-                //Debug.Log(scrollView.verticalNormalizedPosition);
-                //Debug.Log(scrollView.content.anchoredPosition);
             }
             //outputVScrollbar.value = 0f;
-
             //textSelectObject.SetText();
-
-            //Debug.Log($"after: size={outputVScrollbar.size}, value={outputVScrollbar.value}, {isScrollAtBottom}");
-
             //value = value.Replace("\0", string.Empty); // remove embedded nulls
             //textSelectObject.textObject.ForceMeshUpdate();
             textSelectObject.SetText();// ?
-            //Debug.Log(textSelectObject.textObject.text.Length);
-            //Debug.Log(textSelectObject.textObject.textInfo.characterCount);
             //SetViewportLocalPos();
         }
+    }*/
+
+    //testing
+ //   public override void SetText()
+ //   {
+ //       textSelectObject.SetText();
+ //   }
+
+    public bool IsScrollAtBottom()
+    {
+        if (textSelectObject.textObject.preferredHeight < scrollView.viewport.rect.height || outputVScrollbar.value <= .02f || outputVScrollbar.value > 1f)
+        {
+            return true;
+        }
+        return false;
     }
 
     public void SetScrollToBottom()
     {
         waitForScrollBarCO = StartCoroutine(WaitForScrollBarUpdate());
-
     }
 
     IEnumerator WaitForScrollBarUpdate()//bool isBottom)
     {
         yield return null;
-        //Debug.Log("doh");
-        //if (isBottom)
         //outputVScrollbar.value = 0f;
         scrollView.normalizedPosition = new Vector2(0f, 0f);
-
-        //yield return null;
-        //Debug.Log($"after: size={outputVScrollbar.size}, value={outputVScrollbar.value}, {isBottom}");
         waitForScrollBarCO = null;
     }
 
@@ -128,20 +160,80 @@ public class TextWindowController : BaseOutput// MonoBehaviour
         //Debug.Log(outputVScrollbar.value);
     }
 
+    public override void OnPanelResize(PointerEventData eventData)
+    {
+        Vector2 pos = eventData.position;
+        bool scrollIsAtBottom = IsScrollAtBottom();
+     //   if (panel.output != null)
+     //   {
+     //       scrollIsAtBottom = IsScrollAtBottom();//need to make sure this panel actually HAS a text object in it?
+     //   }
+        if (panel.Group != null && panel.Group.position == Direction.Main)
+        {//check drag point against outside edge of Main panelGroup and adjust drag Vector2 to keep it inside the lines
+            Vector2 localPoint;
+            float modX = eventData.position.x;
+            float modY = eventData.position.y;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(panel.Group.RectTransform, eventData.position, panel.Canvas.worldCamera, out localPoint);
+            if (localPoint.x > panel.Group.RectTransform.sizeDelta.x)
+            {
+                //drag point x is outside the main group to the right
+                float xDif = localPoint.x - panel.Group.RectTransform.sizeDelta.x;//this is how far out we are
+                modX = modX - xDif;
+            }
+            else if (localPoint.x < 0f)
+            {
+                modX = modX - localPoint.x;
+            }
+            if (localPoint.y < 0f)
+            {
+                float yDif = -localPoint.y;
+                modY = modY + yDif;
+            }
+            else if (localPoint.y > panel.Group.RectTransform.sizeDelta.y)
+            {
+                float yDif = localPoint.y - panel.Group.RectTransform.sizeDelta.y;
+                modY = modY - yDif;
+            }
+            pos = new Vector2(modX, modY);
+        }
+
+        float draggingX = PanelUtils.GetXDragDelta(panel, pos);// eventData.position);
+        float draggingY = PanelUtils.GetYDragDelta(panel, pos);// eventData.position);
+                                                               //Debug.Log(draggingY);
+        for (int i = 0; i < panel.draggedZones.Count; i++)
+        {
+            if ((panel.draggedZones[i].direction == Direction.Left || panel.draggedZones[i].direction == Direction.Right) && draggingX == 0f)
+                continue;//not actually moving to the left/right so skip
+            if ((panel.draggedZones[i].direction == Direction.Top || panel.draggedZones[i].direction == Direction.Bottom) && draggingY == 0f)
+                continue;//not actually moving up/down so skip
+            if (panel.draggedZones[i].direction == Direction.Left || panel.draggedZones[i].direction == Direction.Right)
+            {
+                panel.OnResize(panel.draggedZones[i].direction, draggingX);
+              //  if (scrollIsAtBottom && panel.output != null && scrollView.content.pivot.y == 1f)
+              //  {
+              //      SetScrollToBottom();
+              //  }
+            }
+            else
+            {
+                panel.OnResize(panel.draggedZones[i].direction, draggingY);
+              //  if (scrollIsAtBottom && panel.output != null && scrollView.content.pivot.y == 1f)
+              //  {
+              //      SetScrollToBottom();
+              //  }
+            }
+            if (scrollIsAtBottom && scrollView.content.pivot.y == 1f)
+            {
+                SetScrollToBottom();
+            }
+            textSelectObject.SetText();
+        }
+    }
+
     public void OnDisable()
     {
         if (waitForScrollBarCO != null)
             StopCoroutine(waitForScrollBarCO);
-    }
-
-    public bool IsScrollAtBottom()
-    {
-        if (textSelectObject.textObject.preferredHeight < scrollView.viewport.rect.height || outputVScrollbar.value <= .02f || outputVScrollbar.value > 1f)
-        {
-            return true;
-        }
-
-        return false;
     }
 
     public void SetViewportLocalPos()
@@ -168,7 +260,6 @@ public class TextWindowController : BaseOutput// MonoBehaviour
             }
         }
         textSelectObject.viewportPosBase = tempPos;*/
-        //Debug.Log(tempPos);
     }
 
     /*   public override void OnPointerDown(PointerEventData eventData)

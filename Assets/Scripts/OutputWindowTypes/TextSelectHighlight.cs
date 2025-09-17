@@ -88,7 +88,7 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
         m_IsTextComponentUpdateRequired = true;
         LayoutRebuilder.MarkLayoutForRebuild(windowController.scrollView.content);// contentRect);
         //      textObject.text = value;
-        //UpdateLabel();
+        UpdateLabel();
     }
 
     protected Mesh mesh

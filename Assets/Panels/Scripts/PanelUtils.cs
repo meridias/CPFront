@@ -437,13 +437,28 @@ namespace Panels
             switch (contentType)
             {
                 case "text":
-                    TextWindowController output = UnityEngine.Object.Instantiate(Resources.Load<TextWindowController>("TextWindowOutput"), panel.content, false);
+                case "textreplace":
+                    TextWindowController textOutput = UnityEngine.Object.Instantiate(Resources.Load<TextWindowController>("TextWindowOutput"), panel.content, false);
+
                     panel.MinSize = new Vector2(100f, 80f);
-                    panel.text = output;
-                    output.panel = panel;
+                    if (contentType == "textreplace")
+                    {
+                        //mainly, room window so we want to replace every input
+                        //and set the pivot from the top, not the bottom
+                        textOutput.replaceText = true;
+                        textOutput.scrollView.content.pivot = new Vector2(0f, 1f);
+                    }
+                    //panel.text = output;
+                    panel.output = textOutput;
+                    textOutput.panel = panel;
                     //output.gameObject
                     break;
-
+                case "edit":
+                    EditWindowController editOutput = UnityEngine.Object.Instantiate(Resources.Load<EditWindowController>("EditWindowOutput"), panel.content, false);
+                    panel.MinSize = new Vector2(150f, 100f);
+                    panel.output = editOutput;
+                    editOutput.panel = panel;
+                    break;
 
             }
 

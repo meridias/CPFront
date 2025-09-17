@@ -65,8 +65,14 @@ namespace Panels
 
         public void OnDrag(PointerEventData eventData)
         {
-            Vector2 pos = eventData.position;
-            bool scrollIsAtBottom = panel.text.IsScrollAtBottom();
+            panel.output.OnPanelResize(eventData);
+
+           /* Vector2 pos = eventData.position;
+            bool scrollIsAtBottom = false;
+            if (panel.text != null)
+            {
+                scrollIsAtBottom = panel.text.IsScrollAtBottom();//need to make sure this panel actually HAS a text object in it?
+            }
             if (panel.Group != null && panel.Group.position == Direction.Main)
             {//check drag point against outside edge of Main panelGroup and adjust drag Vector2 to keep it inside the lines
                 Vector2 localPoint;
@@ -108,7 +114,7 @@ namespace Panels
                 if (panel.draggedZones[i].direction == Direction.Left || panel.draggedZones[i].direction == Direction.Right)
                 {
                     panel.OnResize(panel.draggedZones[i].direction, draggingX);
-                    if (scrollIsAtBottom && panel.text.scrollView.content.pivot.y == 1f)
+                    if (scrollIsAtBottom && panel.text != null && panel.text.scrollView.content.pivot.y == 1f)
                     {
                         panel.text.SetScrollToBottom();
                     }
@@ -116,17 +122,13 @@ namespace Panels
                 else
                 {
                     panel.OnResize(panel.draggedZones[i].direction, draggingY);
-                    if (scrollIsAtBottom && panel.text.scrollView.content.pivot.y == 1f)
+                    if (scrollIsAtBottom && panel.text !=null && panel.text.scrollView.content.pivot.y == 1f)
                     {
                         panel.text.SetScrollToBottom();
                     }
                 }
-
-
-
             }
-
-
+            */
         }
 
         public void OnEndDrag(PointerEventData eventData)
