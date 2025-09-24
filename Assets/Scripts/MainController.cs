@@ -31,21 +31,12 @@ namespace onnaMUD
         public Camera mainCamera;
         //public GameObject outputWindow;
         //public TMP_InputField textOutput;
-        public TextWindowController mainOutput;
-        public GameObject mainOutputTest;
+        //public TextWindowController mainOutput;
+        //public GameObject mainOutputTest;
         public TextMeshProUGUI titleBarText;
         //public Scrollbar mainOutputScrollbar;
         public GameObject optionsWindow;
         public GameObject accountsWindow;
-        //public TextMeshProUGUI textOutput;
-        //public TextMeshProUGUI spaceWidthSource;  //these two were my attempt at figuring out the 'highlight the room title across the whole object' thing
-        //public float spaceWidth;
-        //public TMP_InputField anotherTest;
-        //public TMP_Text testing;
-        //public TextSelectHighlight testing;
-        //public TextWindowController testing;
-        //public ScrollRect scrollTest;
-        //public TMP_Text anotherTest;
         //public DynamicPanelsCanvas mainDynamicCanvas;
         public PanelsCanvas panelsCanvas;
         public Panel[] outputPanels = new Panel[2];

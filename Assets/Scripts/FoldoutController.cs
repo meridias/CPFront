@@ -10,6 +10,7 @@ public class FoldoutController : MonoBehaviour
     public GameObject collapseButton;
     public GameObject expandButton;
     public RectTransform content;
+    public bool isExpanded = false;
 
     // Start is called before the first frame update
     void Start()
@@ -25,6 +26,7 @@ public class FoldoutController : MonoBehaviour
 
     public void ExpandContent(bool isExpanded)
     {
+        this.isExpanded = isExpanded;
         //enable/disable arrow buttons as needed
         if (isExpanded)
         {

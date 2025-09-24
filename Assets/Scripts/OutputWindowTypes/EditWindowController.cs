@@ -36,10 +36,12 @@ public class EditWindowController: BaseOutput
     public Button saveButton;
     public Button closeButton;
 
-    public List<EditWindowButtons> editNewButtons = new List<EditWindowButtons>();
+    public List<EditWindowButtons> editButtons = new List<EditWindowButtons>();
 
     //list of all added GameObjects (inputfields, dropdowns) so we can find matches for incoming json IDs in order to set values
     public List<EditWindowValueObjects> editValueObjects = new List<EditWindowValueObjects>();
+    public List<EditWindowDropdowns> editDropdowns = new List<EditWindowDropdowns>();
+    public List<EditWindowDropdowns> tempEditDropdowns = new List<EditWindowDropdowns>();
 
     public override string Input
     {
@@ -51,10 +53,69 @@ public class EditWindowController: BaseOutput
         }
     }
 
-    public void FindEditObjects(string input, Transform parent)
+    public override void OnPanelClose()
     {
-        string[] names = input.Split(":", StringSplitOptions.RemoveEmptyEntries);
+        ConnectionController.instance.SendData("100", $"edit {editType} {editId} done:button");
+        for (int j = 0; j < editButtons.Count; j++)
+        {
+            //go through all the buttons added and remove listeners
+            editButtons[j].buttonToPress.GetComponent<Button>().onClick.RemoveAllListeners();
+        }
+        if (updateButton != null)
+        {
+            updateButton.onClick.RemoveAllListeners();
+        }
+        if (saveButton != null)
+        {
+            saveButton.onClick.RemoveAllListeners();
+        }
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveAllListeners();
+        }
 
+    }
+
+    public void FindEditObjects(string input, Transform parent)//we need to redo this since most of it is wrong
+    {
+        //Debug.Log(input);
+        int lastIndex = input.LastIndexOf(":");
+        string value = input.Substring(lastIndex + 1);
+        //Debug.Log(value);
+        input = input.Remove(lastIndex + 1);
+        //Debug.Log(input);
+
+        for (int i = 0; i < editValueObjects.Count; i++)
+        {
+            if (editValueObjects[i].objectPath == input)
+            {
+                //Debug.Log($"match found for {input}");
+                switch (editValueObjects[i].objectType)
+                {
+                    case "text":
+                        editValueObjects[i].valueObject.GetComponent<TMP_InputField>().text = value;// names[1];
+                        //Debug.Log($"input: {input}");
+                        break;
+                    case "bool":
+                        Debug.Log($"bool value: {value}");
+                        break;
+                    case "dropdown":
+                        if (int.TryParse(value, out int dropdownOption) && dropdownOption < editValueObjects[i].valueObject.GetComponent<TMP_Dropdown>().options.Count && dropdownOption >= 0)
+                        {
+                            editValueObjects[i].valueObject.GetComponent<TMP_Dropdown>().value = dropdownOption;
+                        }
+                        break;
+                    default:
+                        Debug.Log($"{input}:{value}");
+                        break;
+
+                }
+
+            }
+        }
+
+     /*   string[] names = input.Split(":", StringSplitOptions.RemoveEmptyEntries);
+        //Debug.Log(input);
         List<Transform> matchedNames = new List<Transform>();
         //let's assume that names[0] is our name, in whatever recursive loop we're in 
 
@@ -103,6 +164,7 @@ public class EditWindowController: BaseOutput
                 {
                     case "text":
                         foundEditObject.valueObject.GetComponent<TMP_InputField>().text = names[1];
+                        //Debug.Log($"input: {input}");
                         break;
                     case "bool":
                         break;
@@ -115,7 +177,7 @@ public class EditWindowController: BaseOutput
 
                 }
             }
-        }
+        }*/
 
     }
 
@@ -147,10 +209,10 @@ public class EditWindowController: BaseOutput
         //edit window layout string parse method... public int EditLayoutParse(editWindowObjects)//send the base parent object to the first method call and go from there
         editLayoutString = layoutString;
         //first, clear the field
-        for (int i = 0; i < editNewButtons.Count; i++)
+        for (int i = 0; i < editButtons.Count; i++)
         {
             //go through all the buttons added and add listeners
-            editNewButtons[i].buttonToPress.GetComponent<Button>().onClick.RemoveAllListeners();
+            editButtons[i].buttonToPress.GetComponent<Button>().onClick.RemoveAllListeners();
         }
         if (updateButton != null)
         {
@@ -171,8 +233,17 @@ public class EditWindowController: BaseOutput
             GameObject childGameObject = childTransform.gameObject;
             Destroy(childGameObject);
         }
-        editNewButtons.Clear();
+        editButtons.Clear();
         editValueObjects.Clear();
+        if (editDropdowns.Count > 0)
+        {
+            tempEditDropdowns = editDropdowns.ToList();
+            editDropdowns.Clear();
+        } else
+        {
+            editDropdowns.Clear();
+            tempEditDropdowns.Clear();
+        }
 
         //let's get the type and ID from the start of the editLayoutString
         if (editLayoutString.IndexOf(",") > -1)
@@ -186,10 +257,11 @@ public class EditWindowController: BaseOutput
         }
         //Debug.Log(editLayoutString);
         EditLayoutParse(0, editWindowObjects, "");
-        for (int i = 0; i < editNewButtons.Count; i++)
+        //Debug.Log(editDropdowns.Count);
+        for (int i = 0; i < editButtons.Count; i++)
         {
             //go through all the buttons added and add listeners
-            editNewButtons[i].buttonToPress.GetComponent<Button>().onClick.AddListener(SendButtonCommand);
+            editButtons[i].buttonToPress.GetComponent<Button>().onClick.AddListener(SendButtonCommand);
         }
         //add 'Update' button at the end
         GameObject saveUpdateLG = Instantiate(basicObject, editWindowObjects, false);
@@ -207,68 +279,34 @@ public class EditWindowController: BaseOutput
         saveButton.transform.GetChild(0).GetComponent<TextMeshProUGUI>().SetText("Save");
         saveButton.onClick.AddListener(SendSaveEdit);
 
-        GameObject closeGO = Instantiate(basicObject, editWindowObjects, false);
+        GameObject closeLG = Instantiate(basicObject, editWindowObjects, false);
         //Debug.Log(editNewButtons.Count);
-        closeGO.transform.GetChild(0).gameObject.SetActive(false);
-        closeGO.transform.GetChild(1).gameObject.SetActive(false);
+        closeLG.transform.GetChild(0).gameObject.SetActive(false);
+        closeLG.transform.GetChild(1).gameObject.SetActive(false);
         //add 'Close' button at the end
-        GameObject saveLG = Instantiate(updateButtonPF, editWindowObjects, false);
-        closeButton = saveLG.GetComponentInChildren<Button>(true);
+        GameObject closeGO = Instantiate(updateButtonPF, closeLG.transform, false);
+        closeButton = closeGO.GetComponentInChildren<Button>(true);
         closeButton.transform.GetChild(0).GetComponent<TextMeshProUGUI>().SetText("Close");
-        closeButton.onClick.AddListener(SendClose);
+        closeButton.onClick.AddListener(panel.OnPanelClose);//add the listener to the panel.OnPanelClose as that will do the panel AND this close stuff
     }
 
     public void SendSaveEdit()
     {
         ConnectionController.instance.SendData("100", $"edit {editType} {editId} save:button");
     }
-    public void SendClose()
-    {
-        ConnectionController.instance.SendData("100", $"edit {editType} {editId} done:button");
-        for (int i = 0; i < MainController.instance.editWindows.Count; i++)
-        {
-            if (MainController.instance.editWindows[i].editType == editType && MainController.instance.editWindows[i].editID.ToString() == editId)
-            {
-                //found a match to type and guid in an open edit window
-                //editPanel = editWindows[i].editPanel;
-                //foundMatch = true;
-                for (int j = 0; j < editNewButtons.Count; j++)
-                {
-                    //go through all the buttons added and add listeners
-                    editNewButtons[j].buttonToPress.GetComponent<Button>().onClick.RemoveAllListeners();
-                }
-                if (updateButton != null)
-                {
-                    updateButton.onClick.RemoveAllListeners();
-                }
-                if (saveButton != null)
-                {
-                    saveButton.onClick.RemoveAllListeners();
-                }
-                if (closeButton != null)
-                {
-                    closeButton.onClick.RemoveAllListeners();
-                }
-                Destroy(MainController.instance.editWindows[i].editPanel.gameObject);//we need to work on a Panel.Close method...
-                MainController.instance.editWindows.RemoveAt(i);
-                break;
-            }
-        }
-
-    }
 
     public void SendButtonCommand()
     {
-        for (int i = 0; i < editNewButtons.Count; i++)
+        for (int i = 0; i < editButtons.Count; i++)
         {
-            if (editNewButtons[i].buttonToPress == EventSystem.current.currentSelectedGameObject)
+            if (editButtons[i].buttonToPress == EventSystem.current.currentSelectedGameObject)
             {
                 //deselect button so enter doesn't work on it?
                 EventSystem.current.SetSelectedGameObject(null);
                 //this is the button we just pressed, so send the command without game window echo
                 if (ConnectionController.instance.isConnected)
                 {
-                    ConnectionController.instance.SendData("100", $"{editNewButtons[i].command}:button");
+                    ConnectionController.instance.SendData("100", $"{editButtons[i].command}:button");
                     //Debug.Log($"{editNewButtons[i].command}");
                 }
             }
@@ -303,7 +341,7 @@ public class EditWindowController: BaseOutput
            // {
            //     ConnectionController.instance.SendData("100", $"edit {editType} {editId} update {editValueObjects[i].valueObject.name}{value}:button");
          //   }
-            ConnectionController.instance.SendData("100", $"edit {editType} {editId} update {editValueObjects[i].valueObject.name}{value}:button");
+            ConnectionController.instance.SendData("100", $"edit {editType} {editId} update {editValueObjects[i].objectPath}{value}:button");
             //Debug.Log($"edit {editType} {editId} update {editValueObjects[i].valueObject.name}{value}");
             
         }
@@ -318,7 +356,7 @@ public class EditWindowController: BaseOutput
         bool parseTags = true;
         string matchedTag = "";
 
-        string[] layoutTags = { "text", "noedit", "enum", "newbutton", "group", "bool", "}"};
+        string[] layoutTags = { "text", "noedit", "enum", "newbutton", "group", "bool", "grpnull", "txtnull", "}"};
         List<TextMeshProUGUI> textObjects = new List<TextMeshProUGUI>();//this is for adjusting text object width so they're all the same width
 
         //    if (!keepGoing)
@@ -370,7 +408,7 @@ public class EditWindowController: BaseOutput
             }
             //Debug.Log(tagStart);
             //Debug.Log($"Blah: {editLayoutString.Substring(tagStart)}");
-                string layoutSubstring = editLayoutString.Substring(tagStart);
+            string layoutSubstring = editLayoutString.Substring(tagStart);
             string[] layoutTag = layoutSubstring.Split(",", StringSplitOptions.RemoveEmptyEntries);
             string[] tag = layoutTag[0].Split(":", StringSplitOptions.RemoveEmptyEntries);
 
@@ -383,24 +421,39 @@ public class EditWindowController: BaseOutput
                     lastCheckIndex += 1;
                     break;
                 case "text":
-                   // string[] textTag = tagTest.Split(",", StringSplitOptions.RemoveEmptyEntries);
-                   // string[] text = textTag[0].Split(":", StringSplitOptions.RemoveEmptyEntries);
+                case "noedit":
+                case "txtnull"://can we assume that no 'txtnull' object will be a base level? so all of them will be a list element with space to the left?
                     GameObject textGO = Instantiate(basicObject, parentObject, false);
                     textGO.name = tag[0];
                     TextMeshProUGUI textLabel = textGO.GetComponentInChildren<TextMeshProUGUI>();
                     textLabel.SetText(tag[0]);
                     textObjects.Add(textLabel);
                     GameObject textIF = Instantiate(inputFieldStretchedPF, textGO.transform.GetChild(1), false);
+                    if (matchedTag == "noedit")
+                    {
+                        textIF.GetComponent<TMP_InputField>().readOnly = true;
+                    }
+                    if (matchedTag == "txtnull")
+                    {
+                        Vector2 tempVec = new Vector2(-18f, 0f);
+                        Transform tempT = textGO.transform.Find("Remove");
+                        tempT.gameObject.SetActive(true);
+                        tempT.localPosition = tempVec;
+                        EditWindowButtons textRemoveButtonNew = new EditWindowButtons();
+                        textRemoveButtonNew.buttonToPress = tempT.gameObject;
+                        //Debug.Log($"{path}{tag[0]}");
+                        textRemoveButtonNew.command = $"edit {editType} {editId} update remove {path}{tag[0]}";
+                        editButtons.Add(textRemoveButtonNew);
+                    }
                     //textIF.name = tag[0];
                     tempObject.valueObject = textIF;
-                    tempObject.valueObject.name = $"{path}{tag[0]}:";
+                    //tempObject.valueObject.name = $"{path}{tag[0]}:";
+                    tempObject.objectPath = $"{path}{tag[0]}:";
                     tempObject.objectType = "text";
                     editValueObjects.Add(tempObject);
                     lastCheckIndex += 1;
                     break;
-                case "noedit":
-                  //  string[] noeditTag = tagTest.Split(",", StringSplitOptions.RemoveEmptyEntries);
-                  //  string[] noedit = noeditTag[0].Split(":", StringSplitOptions.RemoveEmptyEntries);
+        /*        case "noedit":
                     GameObject noeditGO = Instantiate(basicObject, parentObject, false);
                     noeditGO.name = tag[0];
                     TextMeshProUGUI noeditLabel = noeditGO.GetComponentInChildren<TextMeshProUGUI>();
@@ -414,7 +467,7 @@ public class EditWindowController: BaseOutput
                     tempObject.objectType = "text";
                     editValueObjects.Add(tempObject);
                     lastCheckIndex += 1;
-                    break;
+                    break;*/
                 case "bool":
                     GameObject boolBase = Instantiate(basicObject, editWindowObjects, false);
                     boolBase.name = tag[0];
@@ -429,7 +482,8 @@ public class EditWindowController: BaseOutput
                     boolOptions.Add("False");
                     boolDP.AddOptions(boolOptions);
                     tempObject.valueObject = boolGO;
-                    tempObject.valueObject.name = $"{path}{tag[0]}:";
+                    //tempObject.valueObject.name = $"{path}{tag[0]}:";
+                    tempObject.objectPath = $"{path}{tag[0]}:";
                     tempObject.objectType = "bool";
                     editValueObjects.Add(tempObject);
                     lastCheckIndex += 1;
@@ -457,7 +511,8 @@ public class EditWindowController: BaseOutput
                     //Debug.Log(enumString);
                     lastCheckIndex = editLayoutString.IndexOf("}", tagStart);
                     tempObject.valueObject = dropdownGO;
-                    tempObject.valueObject.name = $"{path}{tag[0]}:";
+                    //tempObject.valueObject.name = $"{path}{tag[0]}:";
+                    tempObject.objectPath = $"{path}{tag[0]}:";
                     tempObject.objectType = "dropdown";
                     editValueObjects.Add(tempObject);
                     lastCheckIndex += 1;
@@ -492,7 +547,7 @@ public class EditWindowController: BaseOutput
                             //buttonNew.command = tag[2];
                             buttonNew.command = buttonNew.command.Replace("}", string.Empty);
                         }
-                        editNewButtons.Add(buttonNew);
+                        editButtons.Add(buttonNew);
                     }
                     else
                     {
@@ -520,16 +575,49 @@ public class EditWindowController: BaseOutput
                             //buttonNew.command = tag[3];
                             buttonNew.command = buttonNew.command.Replace("}", string.Empty);
                         }
-                        editNewButtons.Add(buttonNew);
+                        editButtons.Add(buttonNew);
                     }
                     lastCheckIndex += 1;
                     break;
                 case "group":
+                case "grpnull":
+                    //Debug.Log($"Path: {path}{tag[0]}:");
                     GameObject groupGO = Instantiate(foldoutPF, parentObject, false);
                     FoldoutController foldout = groupGO.GetComponent<FoldoutController>();
-                    foldout.ExpandContent(false);
+                    //foldout.ExpandContent(false);
                     foldout.label.text = tag[0];
+                    if (matchedTag == "grpnull")
+                    {
+                        //Debug.Log(foldout.label.GetComponent<TextMeshProUGUI>().preferredWidth);
+                        Vector2 tempVec = new Vector2(-18f, 0f);
+                        Transform tempT = foldout.transform.GetChild(0).Find("Remove");
+                        tempT.gameObject.SetActive(true);
+                        tempT.localPosition = tempVec;
+                        EditWindowButtons groupRemoveButtonNew = new EditWindowButtons();
+                        groupRemoveButtonNew.buttonToPress = tempT.gameObject;
+                        Debug.Log($"{path}{tag[0]}");
+                        groupRemoveButtonNew.command = $"edit {editType} {editId} update remove {path}{tag[0]}";
+                        editButtons.Add(groupRemoveButtonNew);
+                    }
                     groupGO.name = tag[0];
+                    bool doExpand = false;
+                    for (int i = 0; i < tempEditDropdowns.Count; i++)
+                    {
+                        if (tempEditDropdowns[i].dropdownPath == $"{path}{tag[0]}:")
+                        {
+                            doExpand = tempEditDropdowns[i].dropdown.isExpanded;
+                            //foldout.ExpandContent(tempEditDropdowns[i].dropdown.isExpanded);
+                            //Debug.Log($"found dropdown match:{tempEditDropdowns[i].dropdown.isExpanded}");
+                            tempEditDropdowns.RemoveAt(i);
+                            break;
+                        }
+                    }
+                    foldout.ExpandContent(doExpand);
+                    EditWindowDropdowns tempDropdown = new EditWindowDropdowns();
+                    tempDropdown.dropdown = foldout;
+                    tempDropdown.dropdownPath = $"{path}{tag[0]}:";
+                    editDropdowns.Add(tempDropdown);
+
                     //Debug.Log($"Blah:{editLayoutString.Substring(editLayoutString.IndexOf("{", tagStart))}");
                     lastCheckIndex = EditLayoutParse(editLayoutString.IndexOf("{", tagStart), foldout.content, $"{path}{tag[0]}:");//, false);
 
@@ -583,7 +671,14 @@ public class EditWindowController: BaseOutput
     public class EditWindowValueObjects
     {
         public GameObject valueObject;
+        public string objectPath = "";
         public string objectType = "";
+    }
+
+    public class EditWindowDropdowns
+    {
+        public FoldoutController dropdown;
+        public string dropdownPath = "";
     }
 
 }

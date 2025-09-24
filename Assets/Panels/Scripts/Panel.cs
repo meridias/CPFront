@@ -1,3 +1,4 @@
+using onnaMUD;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
@@ -282,6 +283,47 @@ namespace Panels
             }
 
             header.panelTitle.text = tag;
+
+        }
+
+        public void OnPanelClose()
+        {
+            //do the close stuff in the output first
+            output.OnPanelClose();
+            //THEN do the close stuff for this panel
+            //figure out what kind of panel this. edit, text? a panel we can completely get rid of? panel we need to only set inactive to hide in case we want to reopen?
+            bool foundPanel = false;
+            for (int i = 0; i < MainController.instance.editWindows.Count; i++)
+            {
+                if (MainController.instance.editWindows[i].editPanel == this)
+                {
+                    //if this panel is an edit window panel, remove it
+                    MainController.instance.editWindows.RemoveAt(i);
+                    Destroy(this.gameObject);// MainController.instance.editWindows[i].editPanel.gameObject);//we need to work on a Panel.Close method...
+                    
+                    foundPanel = true;
+                    break;
+                }
+            }
+            if (foundPanel)
+                return;
+
+            //if this wasn't an edit window panel
+            for (int i = 0; i < MainController.instance.outputPanels.Length; i++)
+            {
+                if (MainController.instance.outputPanels[i] == this)
+                {
+                    //this is a standard output panel
+                    //set it to inactive unless it's the main output, then ignore it (don't close)
+                    if (i > 0)
+                    {
+                        //not main output
+
+                    }
+
+
+                }
+            }
 
         }
     }

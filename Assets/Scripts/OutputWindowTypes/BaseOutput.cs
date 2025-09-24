@@ -11,6 +11,9 @@ public class BaseOutput : MonoBehaviour
 
     public virtual string Input { get; set; }
 
+    public virtual void OnPanelClose()
+    { }
+
     public virtual void OnPanelResize(PointerEventData eventData)
     {
         Vector2 pos = eventData.position;
