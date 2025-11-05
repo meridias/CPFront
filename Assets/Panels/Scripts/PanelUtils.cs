@@ -455,6 +455,7 @@ namespace Panels
                     break;
                 case "edit":
                     EditWindowController editOutput = UnityEngine.Object.Instantiate(Resources.Load<EditWindowController>("EditWindowOutput"), panel.content, false);
+                    editOutput.isNewWindow = true;
                     panel.MinSize = new Vector2(150f, 100f);
                     panel.output = editOutput;
                     editOutput.panel = panel;

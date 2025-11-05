@@ -148,7 +148,7 @@ public class SettingsController : MonoBehaviour
     public void ShowConfigVariables()
     {
         //optionsBackground.gameObject.SetActive(!optionsBackground.gameObject.activeSelf);
-
+        Debug.Log("fucking why?");
         //if (optionsBackground.gameObject.activeSelf)
         //{
         //Debug.Log("blah");

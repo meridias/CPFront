@@ -165,14 +165,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   panel: {fileID: 0}
-  editWindowObjects: {fileID: 8011740198576730023}
-  basicObject: {fileID: 3560189013707072577, guid: 03d8437af189f3a459e79460b9b56b77, type: 3}
-  inputFieldStretchedPF: {fileID: 3766126508853561051, guid: 743463a945853dd4289b92159403af02, type: 3}
-  dropdownPF: {fileID: 5022121807176804552, guid: 75ca5336d04060548bfcd3ac73795ff1, type: 3}
-  foldoutPF: {fileID: 3318846277007354875, guid: 686d37563aba9ed49ac1637a170de209, type: 3}
-  newButtonPF: {fileID: 953022918077654197, guid: a8f8f739e6aeab141949b4765caadda9, type: 3}
-  updateButtonPF: {fileID: 1251225523807028733, guid: d76fc1e530d7d134ea04b8627f2c958a, type: 3}
-  editValueObjects: []
+  isNewWindow: 0
+  editWindowBaseRect: {fileID: 8011740198576730023}
+  inputField: {fileID: 3560189013707072577, guid: 4b8c624827e6049468ae8e181002ef06, type: 3}
+  dropdown: {fileID: 3560189013707072577, guid: 592e3ebf81e7d5544a136b575e327715, type: 3}
+  foldout: {fileID: 5600542214572044979, guid: 82948f8ab8de0624a95216c0278e689d, type: 3}
+  newButton: {fileID: 3560189013707072577, guid: 77922f28a7103134f8af5af3386d5ecc, type: 3}
+  editList: {fileID: 5600542214572044979, guid: 16ff102fa1031ee4da5543c52e9aef6f, type: 3}
+  editListDragZonePF: {fileID: 8935209936556956311, guid: b5d879f4f7c1e8e4988b6e2ce2513616, type: 3}
+  controlButtons: {fileID: 5561434987692407665, guid: 26a38bf27ce31ad48bc0a73c202daa74, type: 3}
+  controlButtonsObject: {fileID: 0}
+  editWindowObjects: []
 --- !u!1 &8011740198517173362
 GameObject:
   m_ObjectHideFlags: 0

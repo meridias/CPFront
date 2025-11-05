@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 public class FoldoutController : MonoBehaviour
 {
@@ -11,6 +13,18 @@ public class FoldoutController : MonoBehaviour
     public GameObject expandButton;
     public RectTransform content;
     public bool isExpanded = false;
+
+    public float spacing
+    {
+        get
+        {
+            return content.gameObject.GetComponent<VerticalLayoutGroup>().spacing;
+        }
+        set
+        {
+            content.gameObject.GetComponent<VerticalLayoutGroup>().spacing = value;
+        }
+    }
 
     // Start is called before the first frame update
     void Start()

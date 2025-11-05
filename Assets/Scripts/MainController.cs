@@ -1,23 +1,24 @@
 namespace onnaMUD
 {
-    using Newtonsoft.Json.Linq;
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+    //using DynamicPanels;
+    using Panels;
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Sockets;
     using System.Threading.Tasks;
     using TMPro;
-    using UnityEngine;
-    using UnityEngine.UI;
-    using UnityEngine.UI.Extensions.Tweens;
-    using UnityEngine.UI.Extensions;
-    using System.Linq;
-    using UnityEditor.PackageManager;
     using UnityEditor;
-    //using DynamicPanels;
-    using Panels;
+    using UnityEditor.PackageManager;
+    using UnityEngine;
+    using UnityEngine.EventSystems;
     using UnityEngine.InputSystem;
+    using UnityEngine.UI;
+    using UnityEngine.UI.Extensions;
+    using UnityEngine.UI.Extensions.Tweens;
 
     //using UnityEngine.UIElements;
 
@@ -209,12 +210,29 @@ namespace onnaMUD
         // Update is called once per frame
         void Update()
         {
-            //if ()
+      /*      if (Keyboard.current.enterKey.wasPressedThisFrame)
+            {
+                if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null)
+                {
+                    if (EventSystem.current.currentSelectedGameObject == commandLine.gameObject)
+                    {
+                        // Code to execute when Enter is pressed and targetObject is selected
+                        Debug.Log("Enter key pressed and targetObject is selected!");
+                        // Add your desired actions here
+                    } else
+                    {
+                        commandLine.ActivateInputField();
+                    }
+                }
+            }*/
+
             if (Keyboard.current.enterKey.wasPressedThisFrame && !commandLine.isFocused)
             {
                 commandLine.ActivateInputField();
- //               Debug.Log("focused");//yeah, this always fires, even when we're already in the command line?
+                //               Debug.Log("focused");//yeah, this always fires, even when we're already in the command line?
             }
+
+
   //          if (Keyboard.current.shiftKey.IsPressed())
   //          {
   //              Debug.Log("shift is pressed");//works

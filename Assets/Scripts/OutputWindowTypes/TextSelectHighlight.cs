@@ -61,6 +61,10 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
     public Vector2 viewportPosBase;
 
     private bool m_IsTextComponentUpdateRequired = false;
+
+    private float m_PointerDownClickStartTime;
+    private float m_KeyDownStartTime;
+    private float m_DoubleClickDelay = 0.5f;
     /*   public string text
        {
            get
@@ -101,10 +105,10 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
         }
     }
 
-    protected int selectedStringStart { get { return m_SelectedStringStart; } set { m_SelectedStringStart = value; ClampStringPos(ref m_SelectedStringStart); } }
-    protected int selectedStringEnd { get { return m_SelectedStringEnd; } set { m_SelectedStringEnd = value; ClampStringPos(ref m_SelectedStringEnd); } }
-    protected int highlightStringStart { get { return m_CaretStart; } set { m_CaretStart = value; ClampCaretPos(ref m_CaretStart); } }
-    protected int highlightStringEnd { get { return m_CaretEnd; } set { m_CaretEnd = value; ClampCaretPos(ref m_CaretEnd); } }
+    protected int selectedStringStart { get { return m_SelectedStringStart; } set { m_SelectedStringStart = value; ClampStringPos(ref m_SelectedStringStart); } }//stringPositionInternal
+    protected int selectedStringEnd { get { return m_SelectedStringEnd; } set { m_SelectedStringEnd = value; ClampStringPos(ref m_SelectedStringEnd); } }//stringSelectPositionInternal
+    protected int highlightStringStart { get { return m_CaretStart; } set { m_CaretStart = value; ClampCaretPos(ref m_CaretStart); } }//caretPositionInternal
+    protected int highlightStringEnd { get { return m_CaretEnd; } set { m_CaretEnd = value; ClampCaretPos(ref m_CaretEnd); } }//caretSelectPositionInternal
 
     public Color selectionColor { get { return m_SelectionColor; } set { if (SetPropertyUtility.SetColor(ref m_SelectionColor, value)) MarkGeometryAsDirty(); } }
 
@@ -252,12 +256,20 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
         windowController.panel.SetAsLast();
         //bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
-  /*      int charIndex = TMP_TextUtilities.FindNearestCharacter(textObject, Input.mousePosition, MainController.instance.mainCamera, true);
-        Debug.Log(charIndex);
-        if (charIndex > -1)
-        {
-            Debug.Log($"blah:{textObject.textInfo.characterInfo[charIndex].character}");
-        }*/
+        /*      int charIndex = TMP_TextUtilities.FindNearestCharacter(textObject, Input.mousePosition, MainController.instance.mainCamera, true);
+              Debug.Log(charIndex);
+              if (charIndex > -1)
+              {
+                  Debug.Log($"blah:{textObject.textInfo.characterInfo[charIndex].character}");
+              }*/
+
+        bool isDoubleClick = false;
+        float timeStamp = Time.unscaledTime;
+
+        if (m_PointerDownClickStartTime + m_DoubleClickDelay > timeStamp)
+            isDoubleClick = true;
+
+        m_PointerDownClickStartTime = timeStamp;
 
         CaretPosition insertionSide;
 
@@ -289,8 +301,34 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
             }
         }
 
-        highlightStringStart = highlightStringEnd = GetCaretPositionFromStringIndex(selectedStringStart);
+        if (isDoubleClick)
+        {
+            int wordIndex = TMP_TextUtilities.FindIntersectingWord(textObject, eventData.position, eventData.pressEventCamera);//?
 
+            if (wordIndex != -1)
+            {
+                // Select current word
+                highlightStringStart = textObject.textInfo.wordInfo[wordIndex].firstCharacterIndex;
+                highlightStringEnd = textObject.textInfo.wordInfo[wordIndex].lastCharacterIndex + 1;
+
+                selectedStringStart = textObject.textInfo.characterInfo[highlightStringStart].index;
+                selectedStringEnd = textObject.textInfo.characterInfo[highlightStringEnd - 1].index + textObject.textInfo.characterInfo[highlightStringEnd - 1].stringLength;
+            }
+            else
+            {
+                // Select current character
+                highlightStringStart = insertionIndex;
+                highlightStringEnd = highlightStringStart + 1;
+
+                selectedStringStart = textObject.textInfo.characterInfo[insertionIndex].index;
+                selectedStringEnd = selectedStringStart + textObject.textInfo.characterInfo[insertionIndex].stringLength;
+            }
+        }
+        else
+        {
+
+            highlightStringStart = highlightStringEnd = GetCaretPositionFromStringIndex(selectedStringStart);
+        }
         //Debug.Log(selectedStringEnd);
         
         UpdateLabel();
@@ -385,8 +423,8 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
         {
             //Debug.Log("out of bounds");
             Vector2 localMousePos;
-            bool doScroll = false;
-            float offset = 0f;
+   //         bool doScroll = false;
+  //          float offset = 0f;
 
             RectTransformUtility.ScreenPointToLocalPointInRectangle(textViewport, eventData.position, eventData.pressEventCamera, out localMousePos);
 
@@ -397,37 +435,37 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
 
             if (localMousePos.y > rect.yMax)
             {
-                offset = MoveUp(true, true);
-                if (windowController.scrollView.normalizedPosition.y < 1f && offset < 0)//not at top
-                {
+                MoveUp(true, true);
+    //            if (windowController.scrollView.normalizedPosition.y < 1f && offset < 0)//not at top
+      //          {
                     //Debug.Log(windowController.scrollView.normalizedPosition.y);
                     //needScrolling.scrollDelta = new Vector2(0f, -offset);//maybe 1.5?
                     //windowController.scrollView.OnScroll(needScrolling);
                     //contentNewPos = new Vector2(0, contentRect.localPosition.y + offset);
-                    doScroll = true;
-                }
+    //                doScroll = true;
+        //        }
                 
             }
             else if (localMousePos.y < rect.yMin)
             {
                 MoveDown(true, true);
-                if (windowController.scrollView.normalizedPosition.y > 0f)
-                {
+    //            if (windowController.scrollView.normalizedPosition.y > 0f)
+      //          {
                     //Debug.Log(windowController.scrollView.normalizedPosition.y);
                     //needScrolling.scrollDelta = new Vector2(0f, -1.3f);
                     //windowController.scrollView.OnScroll(needScrolling);
                    // doScroll = true;
-                }
+        //        }
                 
             }
-            if (doScroll)
-            {
+   //         if (doScroll)
+   //         {
                 //Debug.Log("scrolling?");
 
                 //                windowController.scrollView.OnScroll(needScrolling);
                 //windowController.scrollView.normalizedPosition = 
                 //contentRect.localPosition = new Vector2(0f, contentRect.localPosition.y + offset);
-            }
+  //          }
 
             //adjust scroll normalized position
 
@@ -484,7 +522,7 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
             pos = 0;
     }
 
-    private float MoveUp(bool shift, bool goToFirstChar)
+    private void MoveUp(bool shift, bool goToFirstChar)
     {
         //float offset = 0f;
         if (hasSelection && !shift)
@@ -550,7 +588,7 @@ public class TextSelectHighlight : Selectable, IUpdateSelectedHandler,
 #if TMP_DEBUG_MODE
                 Debug.Log("Caret Position: " + caretPositionInternal + " Selection Position: " + caretSelectPositionInternal + "  String Position: " + stringPositionInternal + " String Select Position: " + stringSelectPositionInternal);
 #endif
-        return 0f;
+ //       return 0f;
     }
 
     private void MoveDown(bool shift, bool goToLastChar)
